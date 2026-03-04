@@ -1,16 +1,5 @@
 ## Hi there 👋
 
-Below is a **refined README.md** with:
-
-* the **Numerical Method section removed** (as you requested)
-* **professional GitHub badges**
-* a **cleaner structure**
-* a **future roadmap for the immersed boundary framework**
-
-This format is commonly used in **research CFD repositories**, so it will make your project look much more polished.
-
----
-
 # IB-FLOWSOL
 
 ![Python](https://img.shields.io/badge/language-Python-blue)
