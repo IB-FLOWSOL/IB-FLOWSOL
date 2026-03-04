@@ -1,16 +1,182 @@
 ## Hi there 👋
 
-<!--
-**IB-FLOWSOL/IB-FLOWSOL** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Below is a **refined README.md** with:
 
-Here are some ideas to get you started:
+* the **Numerical Method section removed** (as you requested)
+* **professional GitHub badges**
+* a **cleaner structure**
+* a **future roadmap for the immersed boundary framework**
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+This format is commonly used in **research CFD repositories**, so it will make your project look much more polished.
+
+---
+
+# IB-FLOWSOL
+
+![Python](https://img.shields.io/badge/language-Python-blue)
+![GPU](https://img.shields.io/badge/accelerated-GPU-green)
+![CFD](https://img.shields.io/badge/domain-CFD-orange)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
+A foundational **Computational Fluid Dynamics (CFD) solver framework** developed as the base infrastructure for building an **Immersed Boundary Method (IBM) solver**.
+
+This repository contains the **first core solver implementation**, which establishes the numerical framework, mesh generation tools, and visualization utilities that will later support a complete immersed boundary formulation.
+
+---
+
+# Project Goal
+
+The long-term objective of this project is to develop a **flexible immersed boundary CFD framework** capable of handling complex geometries on structured grids.
+
+The current version focuses on building a **robust solver foundation**, including:
+
+* Pressure–velocity coupling infrastructure
+* GPU accelerated linear algebra
+* Mesh generation utilities
+* Flow visualization and analysis tools
+
+This solver acts as the **computational backbone** upon which the immersed boundary methodology will be integrated in future versions.
+
+---
+
+# Solver Versions
+
+## FLOWSOL_v1
+
+The primary solver implementation.
+
+Characteristics:
+
+* Hybrid **CPU + GPU architecture**
+* Core CFD operations executed on **CPU**
+* Linear algebra operations accelerated on **GPU**
+* Pressure Poisson equation solved using **GPU Gauss-Seidel iteration**
+
+This version establishes the initial solver pipeline while gradually introducing GPU acceleration.
+
+---
+
+## Hyper FLOWSOL_v1
+
+A fully **GPU-accelerated implementation** of the solver.
+
+Characteristics:
+
+* Entire solver pipeline runs on **GPU**
+* Uses **GPU-accelerated GMRES** for solving linear systems
+* Designed for improved scalability and computational efficiency
+
+This version represents the **next stage of solver performance development**.
+
+---
+
+# Meshing Tools
+
+## Mesher_v1
+
+A structured mesh generator capable of producing **uniform Cartesian grids** for a wide range of geometries.
+
+Features:
+
+* Supports discretization of arbitrary geometries
+* Generates structured grids suitable for immersed boundary simulations
+* Designed to integrate directly with the solver workflow
+
+---
+
+## Mesh Visualizer
+
+A utility tool used to verify the generated mesh.
+
+Capabilities:
+
+* Visual inspection of discretized geometry
+* Validation of mesh topology
+* Quick debugging of geometry discretization
+
+---
+
+# Visualization Tools
+
+The repository also includes tools for analyzing solver output.
+
+## Matplotlib Visualizer
+
+Used for:
+
+* Plotting velocity fields
+* Visualizing scalar fields
+* Inspecting solver outputs
+
+---
+
+## Matplotlib Animator
+
+Used for generating **time-dependent animations** of simulation results.
+
+Typical uses include:
+
+* Flow evolution visualization
+* Transient flow analysis
+* Presentation and validation of solver results
+
+---
+
+# Validation Cases
+
+The solver has been tested on several classical CFD benchmark problems and has shown **positive outcomes**.
+
+Current validation cases include:
+
+* **Lid Driven Cavity Flow**
+* **Channel Flow**
+* **Backward Facing Step**
+
+Detailed validation results and comparisons with benchmark solutions can be found in the documentation below.
+
+**Validation Report**
+
+*(Insert validation PDF link here)*
+
+---
+
+# Solver Demonstrations
+
+Below are some animations and results generated using the solver.
+
+*(Insert result images / GIF animations here)*
+
+---
+
+# Tutorial Video
+
+A tutorial video is provided explaining how to set up and run the solver.
+
+The video demonstrates:
+
+* Solver setup
+* Running simulations
+* Post-processing results
+* Using the framework for research and learning
+
+**YouTube Tutorial**
+
+*(Insert YouTube link here)*
+
+---
+
+# Project Status
+
+This project is currently **under active development**.
+
+Work is ongoing to extend this solver into a **complete immersed boundary CFD framework**.
+
+---
+
+
+# License
+
+This project is released under the **MIT License**.
+
+---
+
