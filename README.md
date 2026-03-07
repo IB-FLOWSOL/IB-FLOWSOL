@@ -133,7 +133,10 @@ https://github.com/IB-FLOWSOL/IB-FLOWSOL/blob/main/Simulation%20validation%20pdf
 
 Below are some animations and results generated using the solver.
 
-*(Insert result images / GIF animations here)*
+![Video Project 1](https://github.com/user-attachments/assets/ef7cf365-c68d-4aa8-be4b-9bc738884bdd)
+![animation_Re500](https://github.com/user-attachments/assets/a0e041ce-1c84-487a-b6ba-3d915dd6d42e)
+
+
 
 ---
 
