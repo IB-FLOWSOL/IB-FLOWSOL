@@ -125,7 +125,7 @@ Detailed validation results and comparisons with benchmark solutions can be foun
 
 **Validation Report**
 
-*(Insert validation PDF link here)*
+https://github.com/IB-FLOWSOL/IB-FLOWSOL/blob/main/Simulation%20validation%20pdf.pdf
 
 ---
 
