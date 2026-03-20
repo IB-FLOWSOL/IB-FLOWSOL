@@ -45,7 +45,7 @@ This version establishes the initial solver pipeline while gradually introducing
 
 ---
 
-## Hyper FLOWSOL_v1
+## Hyper FLOWSOL_v1/v_2
 
 A fully **GPU-accelerated implementation** of the solver.
 
@@ -56,6 +56,11 @@ Characteristics:
 * Designed for improved scalability and computational efficiency
 
 This version represents the **next stage of solver performance development**.
+
+Some comparison
+
+<img width="971" height="194" alt="image" src="https://github.com/user-attachments/assets/bd92135c-cc9f-4f7b-abe4-d5299c14d237" />
+
 
 ---
 
