@@ -148,9 +148,8 @@ Backward facing step (Re 500)
 
 Sorry for the low quality GIFs, just to keep the page easy to load such GIFs were added.
 
-link to high quality simulation results:  
+link to high quality simulation results:  https://www.youtube.com/@nabeelhasan1541/playlists
 
-https://www.youtube.com/@nabeelhasan1541/playlists
 ---
 
 # Tutorial Video
