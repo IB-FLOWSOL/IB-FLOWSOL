@@ -1,12 +1,12 @@
 # ================================= Features =========================================#
-# Utilizes GPU accelarated GMRES for solving pressure correction poisson equation.
-# Inside time loop full GPU accelarated code using Cupy (except t = start).
-# Automatic CSR matrix writer.
-# Option available for space-function based drichilet BC input. Use "f" to activate this type of BC.
-# Orlanski/non-reflective BC code incorporarted.
+# 1. Utilizes GPU accelerated GMRES for solving pressure correction  Poisson equation.
+# 2. Inside time loop full GPU accelerated code using Cupy (except t = start).
+# 3. Automatic CSR matrix writer.
+# 4. Option available for space-function based Dirichlet BC input. 
+# 5. Use "f" to activate this type of BC.
+# 6. Orlanski/non-reflective BC code incorporated.
+# 7. Still on basic SMAC scheme that is without immersed boundary setup.
 # =====================================================================================#
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 import time
