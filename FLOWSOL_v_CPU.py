@@ -2,7 +2,7 @@
 # This is the first basic and simple SMAC scheme-based solver on CPU. Hence it is super-slow and have a limited use as immersed boundary formulation
 # is not embedded into the code. This code basically serves a good idea of how SMAC scheme works and is good for those who want to do minor changes or 
 # just learn. 
-# ================================================================= Advantages : ========================================================================#
+# ================================================================= Advantages : =========================================================================#
 # 1. Good for understanding basic SMAC scheme.
 # 2. Easy to make small changes in the code and check the behaviour the numerical scheme.
 # 3. Serves as a base for ghost node based immersed boundary and aslo serves as base for writing SMAC scheme for GPUs.
