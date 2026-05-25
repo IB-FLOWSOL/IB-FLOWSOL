@@ -4,7 +4,7 @@
 # 3. Automatic CSR matrix writer.
 # 4. Option available for space-function based Dirichlet BC input. 
 # 5. Use "f" to activate this type of BC.
-# 6. Orlanski/non-reflective BC code incorporated.
+# 6. Orlanski/non-reflective BC code incorporated. 
 # 7. Still on basic SMAC scheme that is without immersed boundary setup.
 # =====================================================================================#
 import numpy as np
