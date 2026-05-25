@@ -1,3 +1,8 @@
+#=======================================================================================================================================================#
+#The program is written on GPU for basic SMAC scheme (without immersed boundary method). This program is super-fast as it runs on GPU. This program can 
+# handle a bit more finer grids but still there is a limit because still no sparse matrix compression algorithm is not implemented that by default builds 
+#a csr matrix. The program uses GPU accelerated GMRES.
+#=======================================================================================================================================================#
 import numpy as np
 import matplotlib.pyplot as plt
 import time
