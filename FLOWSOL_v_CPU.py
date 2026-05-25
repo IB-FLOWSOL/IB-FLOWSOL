@@ -1,3 +1,17 @@
+#========================================================================================================================================================#
+# This is the first basic and simple SMAC scheme-based solver on CPU. Hence it is super-slow and have a limited use as immersed boundary formulation
+# is not embedded into the code. This code basically serves a good idea of how SMAC scheme works and is good for those who want to do minor changes or 
+# just learn. 
+# ================================================================= Advantages : ========================================================================#
+# 1. Good for understanding basic SMAC scheme.
+# 2. Easy to make small changes in the code and check the behaviour the numerical scheme.
+# 3. Serves as a base for ghost node based immersed boundary and aslo serves as base for writing SMAC scheme for GPUs.
+# ================================================================= Limitations : =======================================================================#
+# 1. Super slow as the code simply exist for CPU usage.
+# 2. Slower Co-efficient matrix writer (for pressure correction poisson equation).
+# 3. Does not have sparse matrix compression algorithim (like csr or csc) embedded, so consumes a lot of RAM even on coarser grid.
+# 4. Uses GPU accelarated Gauss-Seidel but is not of high significance because of size of co-efficent matrix.
+#=======================================================================================================================================================#
 import numpy as np
 import matplotlib.pyplot as plt
 import time
