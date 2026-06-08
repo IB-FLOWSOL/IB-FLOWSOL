@@ -21,7 +21,7 @@ The project was developed with the goal of providing a flexible framework capabl
 
 # Performance Comparison
 
-<img width="971" height="194" alt="image" src="https://github.com/user-attachments/assets/bd92135c-cc9f-4f7b-abe4-d5299c14d237" />
+<img width="989" height="217" alt="Image" src="https://github.com/user-attachments/assets/b8851d6b-9939-42f8-a041-5f3681eb407a" />
 
 ---
 
