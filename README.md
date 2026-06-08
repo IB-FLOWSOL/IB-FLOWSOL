@@ -145,4 +145,5 @@ Future developments will build upon the numerical and software infrastructure es
 
 # License
 
-This project is released under the MIT License.
+This project is released under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+
