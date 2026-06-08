@@ -1,5 +1,3 @@
-## Hi there 👋
-
 # IB-FLOWSOL
 
 ![Python](https://img.shields.io/badge/language-Python-blue)
@@ -7,128 +5,106 @@
 ![CFD](https://img.shields.io/badge/domain-CFD-orange)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-A foundational **Computational Fluid Dynamics (CFD) solver framework** developed as the base infrastructure for building an **Immersed Boundary Method (IBM) solver**.
+A GPU-accelerated **Computational Fluid Dynamics (CFD) framework** for solving incompressible flows using the **SMAC (Simplified Marker and Cell) scheme**, **Immersed Boundary Method (IBM)**, and **Ghost Node approach** on a **collocated Cartesian grid**.
 
-This repository contains the **first core solver implementation**, which establishes the numerical framework, mesh generation tools, and visualization utilities that will later support a complete immersed boundary formulation.
+IB-FLOWSOL combines:
 
----
+* SMAC pressure–velocity coupling for incompressible Navier–Stokes equations
+* Collocated structured grid formulation
+* Immersed Boundary Method using Ghost Nodes
+* GPU-accelerated linear algebra and iterative solvers
+* Integrated meshing, visualization, and post-processing utilities
 
-# Project Goal
-
-The long-term objective of this project is to develop a **flexible immersed boundary CFD framework** capable of handling complex geometries on structured grids.
-
-The current version focuses on building a **robust solver foundation**, including:
-
-* Pressure–velocity coupling infrastructure
-* GPU accelerated linear algebra
-* Mesh generation utilities
-* Flow visualization and analysis tools
-
-This solver acts as the **computational backbone** upon which the immersed boundary methodology will be integrated in future versions.
+The project was developed with the goal of providing a flexible framework capable of handling complex immersed geometries without requiring body-fitted meshes while maintaining computational efficiency through GPU acceleration.
 
 ---
 
-# Solver Versions
-
-## FLOWSOL_v1
-
-The primary solver implementation.
-
-Characteristics:
-
-* Hybrid **CPU + GPU architecture**
-* Core CFD operations executed on **CPU**
-* Linear algebra operations accelerated on **GPU**
-* Pressure Poisson equation solved using **GPU Gauss-Seidel iteration**
-
-This version establishes the initial solver pipeline while gradually introducing GPU acceleration.
-
----
-
-## Hyper FLOWSOL_v1/v_2
-
-A fully **GPU-accelerated implementation** of the solver.
-
-Characteristics:
-
-* Entire solver pipeline runs on **GPU**
-* Uses **GPU-accelerated GMRES** for solving linear systems
-* Designed for improved scalability and computational efficiency
-
-This version represents the **next stage of solver performance development**.
-
-Some comparison
+# Performance Comparison
 
 <img width="971" height="194" alt="image" src="https://github.com/user-attachments/assets/bd92135c-cc9f-4f7b-abe4-d5299c14d237" />
 
-
 ---
 
-# Meshing Tools
+# Main Components
 
-## Mesher_v1
+## Mesher
 
-A structured mesh generator capable of producing **uniform Cartesian grids** for a wide range of geometries.
+Structured Cartesian mesh generator used for immersed boundary simulations.
 
 Features:
 
-* Supports discretization of arbitrary geometries
-* Generates structured grids suitable for immersed boundary simulations
-* Designed to integrate directly with the solver workflow
+* Generation of uniform structured grids
+* Geometry discretization support
+* Direct integration with the IB-FLOWSOL solver workflow
 
 ---
 
-## Mesh Visualizer
+## IB-FLOWSOL_GPU_v1
 
-A utility tool used to verify the generated mesh.
+Main solver implementation.
 
 Capabilities:
 
-* Visual inspection of discretized geometry
-* Validation of mesh topology
-* Quick debugging of geometry discretization
+* Solves incompressible Navier–Stokes equations
+* SMAC-based pressure–velocity coupling
+* Immersed Boundary Method using Ghost Nodes
+* GPU-accelerated matrix operations and linear solvers
+* Support for complex immersed geometries on Cartesian grids
+
+This is the primary code used for running CFD simulations within the framework.
 
 ---
 
-# Visualization Tools
+## Mesh_Visualizer
 
-The repository also includes tools for analyzing solver output.
+Utility for inspecting generated meshes.
 
-## Matplotlib Visualizer
+Features:
+
+* Structured grid visualization
+* Geometry discretization verification
+* Mesh debugging and validation
+
+---
+
+## Matplotlib_Visualizer
+
+Post-processing utility for simulation analysis.
 
 Used for:
 
-* Plotting velocity fields
-* Visualizing scalar fields
-* Inspecting solver outputs
+* Velocity field visualization
+* Pressure contour visualization
+* Scalar field inspection
+* Solver result analysis
 
 ---
 
-## Matplotlib Animator
+## Matplotlib_Animator
 
-Used for generating **time-dependent animations** of simulation results.
+Animation utility for transient simulations.
 
-Typical uses include:
+Used for:
 
 * Flow evolution visualization
-* Transient flow analysis
-* Presentation and validation of solver results
+* Time-dependent solution analysis
+* Generation of simulation animations
 
 ---
 
 # Validation Cases
 
-The solver has been tested on several classical CFD benchmark problems and has shown **positive outcomes**.
+The solver has been validated against several classical CFD benchmark problems.
 
 Current validation cases include:
 
-* **Lid Driven Cavity Flow**
-* **Channel Flow**
-* **Backward Facing Step**
+* Lid Driven Cavity Flow
+* Channel Flow
+* Backward Facing Step
 
-Detailed validation results and comparisons with benchmark solutions can be found in the documentation below.
+Detailed validation results and benchmark comparisons are available in the validation report.
 
-**Validation Report**
+### Validation Report
 
 https://github.com/IB-FLOWSOL/IB-FLOWSOL/blob/main/Simulation%20validation%20pdf.pdf
 
@@ -136,51 +112,37 @@ https://github.com/IB-FLOWSOL/IB-FLOWSOL/blob/main/Simulation%20validation%20pdf
 
 # Solver Demonstrations
 
-Below are some animations and results generated using the solver.
-
-Lid driven cavity (Re 400)
+### Lid Driven Cavity (Re = 400)
 
 ![Video Project 1](https://github.com/user-attachments/assets/ef7cf365-c68d-4aa8-be4b-9bc738884bdd)
 
-Backward facing step (Re 500)
+### Backward Facing Step (Re = 500)
 
 ![Video Project 1 1](https://github.com/user-attachments/assets/6d7b171c-53ec-4dff-a0ea-37e097e00992)
 
-Sorry for the low quality GIFs, just to keep the page easy to load such GIFs were added.
+Low-resolution GIFs are used to keep the repository lightweight.
 
-link to high quality simulation results:  https://www.youtube.com/@nabeelhasan1541/playlists
+High-quality simulation results and animations can be found here:
 
----
-
-# Tutorial Video
-
-A tutorial video is provided explaining how to set up and run the solver.
-
-The video demonstrates:
-
-* Solver setup
-* Running simulations
-* Post-processing results
-* Using the framework for research and learning
-
-**YouTube Tutorial**
-
-*(Insert YouTube link here)*
+https://www.youtube.com/@nabeelhasan1541/playlists
 
 ---
 
-# Project Status
+# Current Status
 
-This project is currently **under active development**.
+The IB-FLOWSOL solver framework is now complete and fully functional.
 
-Work is ongoing to extend this solver into a **complete immersed boundary CFD framework**.
+Ongoing research and development efforts are focused on creating the next generation of solvers that are:
+
+* Faster
+* More memory efficient
+* Better suited for large-scale simulations
+* More scalable on modern GPU architectures
+
+Future developments will build upon the numerical and software infrastructure established by IB-FLOWSOL.
 
 ---
-
 
 # License
 
-This project is released under the **MIT License**.
-
----
-
+This project is released under the MIT License.
