@@ -169,17 +169,33 @@ y_max = max(y_values)
 print("Xmax =", x_max)
 print("Ymax =", y_max)
 #-----------------------------------------------------------#
+L_ref = x_max       # Set L_ref as X_max
+def perp_dist(a0_x, a0_y, a1_x, a1_y, g_x, g_y, L_ref):
+
+    X0, Y0 = a0_x, a0_y
+    X1, Y1 = a1_x, a1_y
+    alpha_g, beta_g = g_x, g_y
+    
+    numerator   = abs((Y1 - Y0)*alpha_g - (X1 - X0)*beta_g + (X1*Y0) - (Y1*X0))
+    denominator = np.sqrt((Y1 - Y0)**2 + (X1 - X0)**2)
+    
+    r = numerator / denominator
+    r = r / L_ref       # scale to non-dimensional units
+    r = round(r,6)
+    return r    
 
 # def find_repeated():
 
 # Calcuation of mid-boundary coordinates
 # Note: We must try to avoid giving geometries smaller than mesh element size
 # Example: We want a grid of 129x129 (includes boundaries) so we must input del_h = 10/(129-2) = 10/(127)
+# Problem 1: 2,0 10,0 10,2 12,2 12,4 10,4 10,10 2,10 2,8 0,8 0,6 2,6 2,0 break 4,2 8,2 8,8 4,8 4,2 break
 
-del_h = 0.07           #0.05 >> 202x202            #0.0787 >> 129x129             
+del_h = 0.05         #0.05 >> 202x202            #0.0787 >> 129x129             #0.126 >> 81x81
 tol = 8
 tolerance = 1e-8
 space_laps = 1e-4    # (set your input precision)
+gpu_tol = 1e-10
 
 cad_st = time.time()
 # calculation for line
@@ -296,10 +312,10 @@ if (len(line)!=0):
         # point after the end point 
         vertices.append(vertices[3])
         print("😭",vertices)
-
+        
         even_vertex = []
         for i in range(2,len(vertices)-2,1):
-            if (abs(vertices[i][1] - vertices[i+1][1]) > 1e-5 and abs(vertices[i][0] - vertices[i+1][0]) > 1e-5):
+            if (abs(vertices[i][1] - vertices[i+1][1]) > 1e-5 or abs(vertices[i][0] - vertices[i+1][0]) > 1e-5):
                 if (vertices[i-1][1] < vertices[i][1] and vertices[i+1][1] < vertices[i][1]):
                     even_vertex.append(vertices[i])
                     print(i,vertices[i][0],vertices[i][1])
@@ -323,6 +339,7 @@ if (len(line)!=0):
             Even_vertex.append(even_vertex[im])
     
     print("even: ",Even_vertex)
+    # time.sleep(900)
 
 print("----------------------------------------")
 # print("u: ",unique_rounded_points)
@@ -403,10 +420,15 @@ for Y in np.arange(0,y_max+del_h,del_h):
             fill.append(unique_rounded_points[u])
 
 filtered_exterior_x = list((set(filtered_exterior) | set(rounded_horizontal) |set(fill))) #  pureExteriorPoints + boundaryPoints + HorizontalPoints
+
+filtered_exterior_x_set = set(filtered_exterior_x)
 et = time.time()
 print("Done.")
 print("Time taken = ",et-st)
-
+# print(filtered_exterior_x)
+if ((18.2,10) in filtered_exterior_x_set):
+    print("yes")
+# time.sleep(9000)
 #---------------------------------------------------------------ghost-node detection--------------------------------------------------------#
 print(Fore.LIGHTMAGENTA_EX + "Starting Edge Detection..." + Style.RESET_ALL)
 edge_st = time.time()
@@ -421,7 +443,7 @@ for i in range(len(A)):
     A0 = A[i]                          # shape (2,)
     diff = B - A0                      # (M, 2)
     dist = torch.sqrt((diff[:,0])**2 + (diff[:,1])**2)   # GPU
-    mask = (torch.abs(dist - del_h) < 1e-10)              # GPU
+    mask = (torch.abs(dist - del_h) < gpu_tol)              # GPU
     # if (A0[0] == 7.0 and A0[1]==2.5):
     #     print(i,dist,mask)
     idx = torch.where(mask == True)[0]                   # GPU
@@ -464,10 +486,10 @@ if (len(line)!=0):
                 dist_OF = np.sqrt((X0-X2)**2 + (Y0-Y2)**2)  # length OF
                 # print("f: ",X0,Y0,"",per_dist,"",sin_alpha,"",sin_beta)
                 # print("f: ",X0,Y0,"",per_dist,"",rounded_sin_alpha,"",rounded_sin_beta)
-                # if (((rounded_sin_alpha < del_h) or (rounded_sin_beta < del_h)) and ((dist_OE <= dist_EF) and (dist_OF <= dist_EF))):
-                #     sub_sorted_ghost_node.append((X0,Y0))
-                if (((per_dist < np.sqrt(2*del_h**2))) and ((dist_OE <= dist_EF) and (dist_OF <= dist_EF))):
-                    sub_sorted_ghost_node.append((X0,Y0))               
+                if (((rounded_sin_alpha < del_h) or (rounded_sin_beta < del_h)) and ((dist_OE <= dist_EF) and (dist_OF <= dist_EF))):
+                    sub_sorted_ghost_node.append((X0,Y0))
+                # if (((per_dist < np.sqrt(2*del_h**2))) and ((dist_OE <= dist_EF) and (dist_OF <= dist_EF))):
+                #     sub_sorted_ghost_node.append((X0,Y0))               
                 else:
                     pass
             if(len(sub_sorted_ghost_node) > 0):
@@ -537,163 +559,364 @@ for i in range(0,len(sorted_ghost_nodes),1):
     
     sorted_first_interface.append(sub_sorted_first_interface)
 
+print("++++++++")
+print(sorted_ghost_nodes[0])
+print(sorted_ghost_nodes[1])
+print(sorted_ghost_nodes[2])
+print(sorted_ghost_nodes[3])
+# print(sorted_ghost_nodes[4])
+# print(sorted_ghost_nodes[5])
+# print(sorted_ghost_nodes[6])
+# print(sorted_ghost_nodes[7])
+print("++++++++++")
+# time.sleep(900)
+#========================================================================================================================================#
+#                                                           Mirror Points Setup
+#========================================================================================================================================#
 mirror = []
+mirror_perp_dist = []
 if (len(line) !=0 ):
-    for i in range(0, len(sorted_ghost_nodes), 1):
-        X1, Y1 = line[i][0], line[i][1]
-        X2, Y2 = line[i+1][0], line[i+1][1]
+    break_check = 0     # No 'break' passed yet
+    for i in range(0, len(sorted_ghost_nodes)+1, 1):        
+        if break_check == 0:
+            line_index = i
+        elif break_check == 1:
+            line_index = i+1
+        X1, Y1 = line[line_index][0], line[line_index][1]
+        X2, Y2 = line[line_index+1][0], line[line_index+1][1]
+        print("here: ",X1,Y1,X2,Y2,"",i,line_index,break_check)
+
         mirror_sub = []
+        mirror_perp_dist_sub = []
+
         if ((X1 != "B" or Y1 !="R") and (X2 != "B" or Y2 !="R") ):
+            print("pass: ",X1,Y1,X2,Y2,"",i,line_index,break_check)
             # Handle different line cases
             if abs(X2 - X1) < 1e-10:  # Vertical line
-                for j in range(len(sorted_ghost_nodes[i])):
+                print("Section_VERTICAL 2: ",X1,Y1,X2,Y2)
+                if (break_check == 0):
+                    i = i
+                elif (break_check == 1):
+                    i = i-1
+                for j in range(0, len(sorted_ghost_nodes[i]), 1):
                     Xg, Yg = sorted_ghost_nodes[i][j]
-                    mirror_sub.append((2*X1 - Xg, Yg))
+                    if (abs(Xg-X1) > tolerance):
+                        Xm = 2*X1 - Xg
+                        Ym = Yg
+                        mirror_sub.append((Xm, Ym))       # formula to be used here Xm = Xg - 2*(Xg-X1)
+                        r = perp_dist(X1,Y1,X2,Y2,Xm,Ym,L_ref)
+                        mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                        print("section 1.1: ",X1,Y1,X2,Y2,Xg,Yg,"Edge=",i,"GN_index=",j)
+                        print("True_V.0",Xm,Ym)
+                    elif(abs(Xg-X1) < tolerance):
+                        Xm_p = round((Xg + del_h),tol)      
+                        Xm_s = round((Xg - del_h),tol)
+                        if ((Xm_p, Yg) in filtered_interior_x_set):
+                            mirror_sub.append((Xm_p, Yg))       
+                            r = perp_dist(X1,Y1,X2,Y2,Xm_p,Yg,L_ref)
+                            mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                            print("section 1.2: ",X1,Y1,X2,Y2,Xg,Yg,"Edge=",i,"GN_index=",j)
+                            print("True_V.1",Xm_p,Yg)
+                        elif ((Xm_s, Yg) in  filtered_interior_x_set):
+                            mirror_sub.append((Xm_s,Yg))
+                            r = perp_dist(X1,Y1,X2,Y2,Xm_s,Yg,L_ref)
+                            mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                            print("section 1.3: ",X1,Y1,X2,Y2,Xg,Yg,"Edge=",i,"GN_index=",j)
+                            print("True_V.2",Xm_s,Yg)
+
+
+                        else:
+                            pass
                     
             elif abs(Y2 - Y1) < 1e-10:  # Horizontal line
+                print("Section_HORIZONTAL 2: ",X1,Y1,X2,Y2)
+                if (break_check == 0):
+                    i = i
+                elif (break_check == 1):
+                    i = i - 1
                 for j in range(len(sorted_ghost_nodes[i])):
                     Xg, Yg = sorted_ghost_nodes[i][j]
-                    mirror_sub.append((Xg, 2*Y1 - Yg))
+                    if(abs(Yg - Y1) > tolerance ):
+                        print("section 2.1: ",X1,Y1,X2,Y2,Xg,Yg,"Edge=",i,"GN_index=",j)
+                        Xm = Xg
+                        Ym = 2*Y1 - Yg
+                        mirror_sub.append((Xm, Ym))
+                        r = perp_dist(X1,Y1,X2,Y2,Xm,Ym,L_ref)
+                        mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                        print("True_H.0",Xm,Ym)
+                    elif(abs(Yg - Y1) < tolerance):
+                        print("section 2.2: ",X1,Y1,X2,Y2,Xg,Yg,"Edge=",i,"GN_index=",j)
+                        Ym_p = round((Yg + del_h),tol)
+                        Ym_s = round((Yg - del_h),tol)
+                        # print(Ym_p,Ym_s)
+                        if ((Xg, Ym_p) in filtered_interior_x_set):
+                            mirror_sub.append((Xg, Ym_p))
+                            print("True_H.1",Xg,Ym_p)
+                            r = perp_dist(X1,Y1,X2,Y2,Xg,Ym_p,L_ref)
+                            mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                        elif ((Xg, Ym_s) in  filtered_interior_x_set):
+                            mirror_sub.append((Xg, Ym_s))
+                            print("True_H.2",Xg,Ym_s)
+                            r = perp_dist(X1,Y1,X2,Y2,Xg,Ym_s,L_ref)
+                            mirror_perp_dist_sub.append(r)  # |- perpendicular distnace from the boundary 
+                        else:
+                            pass
                     
             else:  # Slanted line
+                
+                target_distance = del_h  
                 slope = (Y2 - Y1) / (X2 - X1)
+                denominator = slope**2 + 1
+                sqrt_den = np.sqrt(denominator)
+                if (break_check == 0):
+                    i = i
+                elif (break_check == 1):
+                    i = i - 1
                 for j in range(len(sorted_ghost_nodes[i])):
                     Xg, Yg = sorted_ghost_nodes[i][j]
+                    print("section 2.3: ",X1,Y1,X2,Y2,Xg,Yg)
+                    # print(Xg, Yg) 
+                    # Calculate current signed distance
+                    # common / sqrt_den is the actual perpendicular distance
                     common = slope * (Xg - X1) - (Yg - Y1)
-                    denominator = slope**2 + 1
-                    Xm = Xg - (2 * slope * common) / denominator
-                    Ym = Yg + (2 * common) / denominator
+                    # print(Xg, Yg, common )
+                    if abs(common) < tolerance:
+                        # POINT IS ON THE LINE: Move by fixed target_distance
+                        # We use a negative sign for X and positive for Y to move "inward" 
+                        # depending on your domain orientation
+                        Xm = Xg - (target_distance * slope) / sqrt_den
+                        Ym = Yg + (target_distance) / sqrt_den
+                        mirror_perp_dist_sub.append(target_distance/L_ref) # |- Perpendicular distance (expetional case)
+                    else:
+                        # POINT IS NOT ON THE LINE: Use standard reflection
+                        Xm = Xg - (2 * slope * common) / denominator
+                        Ym = Yg + (2 * common) / denominator
+                        r = perp_dist(X1,Y1,X2,Y2,Xm,Ym,L_ref)
+                        mirror_perp_dist_sub.append(r)  # |- Perpendicular distance
+
+                    
                     mirror_sub.append((Xm, Ym))
+        else:
+            break_check = 1    # 'break'passed
+            print("HI ???")
         
-        mirror.append(mirror_sub)
+        print("mirror_sub_id = ",i," ",mirror_sub)
+        if (len(mirror_sub) > 0):
+            mirror.append(mirror_sub)
+            mirror_perp_dist.append(mirror_perp_dist_sub)
+# time.sleep(900)
+print(len(sorted_ghost_nodes[2]))
+print("LENGTH = ",len(mirror))
+print(mirror[0])
+print(mirror[1])
+print(mirror[2])
+print(mirror[3])
+# print(mirror[4])
+# print(mirror[5])
+# print(mirror[6])
+# print(mirror[7])
+# print(mirror[8])
+# print(filtered_interior_x_set)
+# time.sleep(900)
+#========================================================================================================================================#
+#                                                           Interpolation Points Setup
+#========================================================================================================================================#
+interpolation_points = []
+global_normal_dist = []
+break_check = 0
+# detecting points for bilinear interpolation on mirror point
+for i in range(0,len(sorted_ghost_nodes)+1,1):
 
+    if (break_check == 0):
+        line_index = i
+    elif (break_check == 1):
+        line_index = i+1
 
-# interpolation_points = []
-# # detecting points for bilinear interpolation on mirror point
-# for i in range(0,len(sorted_ghost_nodes),1):
-#     X0,Y0 = line[i][0],line[i][1]
-#     X1,Y1 = line[i+1][0],line[i+1][1]
-#     print("#main")
-#     if ((X1 != "B" or Y1 !="R") and (X2 != "B" or Y2 !="R") ):
-#         if (abs(X1 - X0) < tolerance):
-#             pass
-#         elif(abs(Y1 - Y0) < tolerance):
-#             slope = 0
-#         else:
-#             slope = (Y1-Y0)/(X1-X0)
-#         print("sub_main")
-#         sub_interpolation_points = []
-#         for j in range(0,len(sorted_ghost_nodes[i]),1):
-#             coords = []
-#             Xg,Yg = sorted_ghost_nodes[i][j][0],sorted_ghost_nodes[i][j][1]
-#             Xm,Ym = mirror[i][j][0],mirror[i][j][1]
-#             if (abs(X1 - X0) < tolerance):  # vertical lines
-#                 x = X0
-#                 y = Yg
-#             elif(abs(Y1 - Y0) < tolerance): # horizontal lines
-#                 x = Xg
-#                 y = Y0
-#             else:                           # lines at angles != 90° and 180° 
-#                 x = ((Yg - Y0)/slope) + X0
-#                 y = Y0 + (slope*(Xg - X0))
+    X0,Y0 = line[line_index][0],line[line_index][1]
+    X1,Y1 = line[line_index+1][0],line[line_index+1][1]
 
-#             xp = x - Xg
-#             xp = round(xp,tol)
-#             yp = y - Yg
-#             yp = round(yp, tol)
-#             print("#-map-#",xp,yp)
-#             if (xp > 0):
-#                 print("#1")
-#                 alpha_x_1 = Xg + del_h
-#                 alpha_x_2 = Xg + 2*del_h
-#                 alpha_x_3 = Xg + 3*del_h
-#                 alpha_x_1 = round(alpha_x_1,tol)
-#                 alpha_x_2 = round(alpha_x_2,tol)
-#                 alpha_x_3 = round(alpha_x_3,tol)
-#                 # alpha_y_1 = Yg + del_h
-#                 # alpha_y_2 = Yg + 2*del_h
-#                 # alpha_y_3 = Yg + 3*del_h
-#                 rt = time.time()
-#                 if ((alpha_x_1, Yg) in filtered_interior_x_set): 
-#                     coords.append((alpha_x_1,Yg))
-#                 if ((alpha_x_2, Yg) in filtered_interior_x_set):
-#                     coords.append((alpha_x_2,Yg))
-#                 if((alpha_x_3, Yg) in filtered_interior_x_set):
-#                     coords.append((alpha_x_3,Yg))
-#                 et = time.time()
-#                 print("<",et-rt,">")
-                
-#             if (xp < 0):
-#                 print("#2")
-#                 alpha_x_1 = Xg - del_h
-#                 alpha_x_2 = Xg - 2*del_h
-#                 alpha_x_3 = Xg - 3*del_h  
-#                 # alpha_y_1 = Yg - del_h
-#                 # alpha_y_2 = Yg - 2*del_h
-#                 # alpha_y_3 = Yg - 3*del_h 
-#                 alpha_x_1 = round(alpha_x_1,tol)
-#                 alpha_x_2 = round(alpha_x_2,tol)
-#                 alpha_x_3 = round(alpha_x_3,tol)
-#                 rt = time.time()
-#                 if ((alpha_x_1, Yg) in filtered_interior_x_set):    
-#                     coords.append((alpha_x_1,Yg))
-#                 if((alpha_x_2, Yg) in filtered_interior_x_set):
-#                     coords.append((alpha_x_2,Yg))
-#                 if((alpha_x_3, Yg) in filtered_interior_x_set):
-#                     coords.append((alpha_x_3,Yg))
-#                 et = time.time()
-#                 print("<",et-rt,">")                     
-#             if (yp > 0):
-#                 print("#3")
-#                 # alpha_x_1 = Xg - del_h
-#                 # alpha_x_2 = Xg - 2*del_h
-#                 # alpha_x_3 = Xg - 3*del_h  
-#                 alpha_y_1 = Yg + del_h
-#                 alpha_y_2 = Yg + 2*del_h
-#                 alpha_y_3 = Yg + 3*del_h 
-#                 alpha_y_1 = round(alpha_y_1,tol)
-#                 alpha_y_2 = round(alpha_y_2,tol)
-#                 alpha_y_3 = round(alpha_y_3,tol)
-#                 rt = time.time() 
-#                 if ((Xg, alpha_y_1) in filtered_interior_x_set):  
-#                     coords.append((Xg,alpha_y_1))
-#                 if ((Xg, alpha_y_2) in filtered_interior_x_set):
-#                     coords.append((Xg,alpha_y_2))
-#                 if((Xg, alpha_y_3) in filtered_interior_x_set):
-#                     coords.append((Xg,alpha_y_3))
-#                 et = time.time() 
-#                 print("<",et-rt,">")
-                
-#             if (yp < 0):
-#                 print("#4")
-#                 # alpha_x_1 = Xg + del_h
-#                 # alpha_x_2 = Xg + 2*del_h
-#                 # alpha_x_3 = Xg + 3*del_h  
-#                 alpha_y_1 = Yg - del_h
-#                 alpha_y_2 = Yg - 2*del_h
-#                 alpha_y_3 = Yg - 3*del_h 
-#                 alpha_y_1 = round(alpha_y_1,tol)
-#                 alpha_y_2 = round(alpha_y_2,tol)
-#                 alpha_y_3 = round(alpha_y_3,tol)
-#                 rt = time.time() 
-#                 if ((Xg, alpha_y_1) in filtered_interior_x_set):  
-#                     coords.append((Xg,alpha_y_1))
-#                 if((Xg, alpha_y_2) in filtered_interior_x_set):
-#                     coords.append((Xg,alpha_y_2))
-#                 if((Xg, alpha_y_3) in filtered_interior_x_set):
-#                     coords.append((Xg,alpha_y_3))
-#                 et = time.time()
-#                 print("<",et-rt,">")
-#             if ((abs(Xg-Xm) < tolerance) and (abs(Yg-Ym) < tolerance)):
-#                 coords.append((Xg,Yg))
-#             else:
-#                 pass
-#             sub_interpolation_points.append(coords)
-#         interpolation_points.append(sub_interpolation_points)   
-#     else:
-#         pass
+    if ((X0 != "B" or Y0 !="R") and (X1 != "B" or Y1 !="R") ):
+
+        sub_interpolation_points = []
+        sub_normal_dist = []
+
+        if (break_check == 0):
+            i = i
+        elif (break_check == 1):
+            i = i - 1
+
+        for j in range(0,len(sorted_ghost_nodes[i]),1):
+            coords = []
+            normal_dist = []
+            Xg,Yg = sorted_ghost_nodes[i][j][0],sorted_ghost_nodes[i][j][1]
+            Xm,Ym = mirror[i][j][0],mirror[i][j][1] 
+            Max_limit = 3   # maximum size for interpolation stencil
+            if True:
+                # Y ---
+                alpha_y_1 = Yg - del_h
+
+                alpha_y_2 = Yg - 2*del_h
+
+                alpha_y_3 = Yg - 3*del_h
+
+                alpha_y_1 = round(alpha_y_1,tol)
+
+                alpha_y_2 = round(alpha_y_2,tol)
+
+                alpha_y_3 = round(alpha_y_3,tol)
+                # if ((Yg - 5.0) < tolerance and (Xg - 5.2) < tolerance):
+                # if i - 4 < tolerance:
+                    # print(">LOP) ",alpha_y_1,alpha_y_2,alpha_y_3,Xg,Yg)
+                    # time.sleep(1)
+                if ((Xg, alpha_y_1) in filtered_interior_x_set) and (len(coords) < Max_limit):  
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_1,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_1))
+                        print("1> ",alpha_y_1,Xg,Yg,"Y--")
+
+                if((Xg, alpha_y_2) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_2,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_2))
+                        print("2> ",alpha_y_2,Xg,Yg,"Y--")
+
+                if((Xg, alpha_y_3) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_3,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_3))
+                        print("3> ",alpha_y_3,Xg,Yg,"Y--")
+
+                # X +++
+                alpha_x_1 = Xg + del_h
+
+                alpha_x_2 = Xg + 2*del_h
+
+                alpha_x_3 = Xg + 3*del_h
+
+                alpha_x_1 = round(alpha_x_1,tol)
+
+                alpha_x_2 = round(alpha_x_2,tol)
+
+                alpha_x_3 = round(alpha_x_3,tol)
+
+                if ((alpha_x_1, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_1,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist): 
+                        normal_dist.append(r)
+                        coords.append((alpha_x_1,Yg))
+                        print("1> ",alpha_x_1,Xg,Yg,"X++")
+
+                if ((alpha_x_2, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_2,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((alpha_x_2,Yg))
+                        print("2> ",alpha_x_2,Xg,Yg,"X++")
+
+                if((alpha_x_3, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_3,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((alpha_x_3,Yg))
+                        print("3> ",alpha_x_3,Xg,Yg,"X++")
+                # X ---
+                alpha_x_1 = Xg - del_h
+
+                alpha_x_2 = Xg - 2*del_h
+
+                alpha_x_3 = Xg - 3*del_h  
+
+                alpha_x_1 = round(alpha_x_1,tol)
+
+                alpha_x_2 = round(alpha_x_2,tol)
+
+                alpha_x_3 = round(alpha_x_3,tol)
+
+                if ((alpha_x_1, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):    
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_1,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((alpha_x_1,Yg))
+                        print("1> ",alpha_x_1,Xg,Yg,"X--")
+
+                if((alpha_x_2, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_2,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((alpha_x_2,Yg))
+                        print("2> ",alpha_x_2,Xg,Yg,"X--")
+
+                if((alpha_x_3, Yg) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,alpha_x_3,Yg,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((alpha_x_3,Yg))
+                        print("3> ",alpha_x_3,Xg,Yg,"X--")
+    
+                # Y +++
+                alpha_y_1 = Yg + del_h
+
+                alpha_y_2 = Yg + 2*del_h
+
+                alpha_y_3 = Yg + 3*del_h
+
+                alpha_y_1 = round(alpha_y_1,tol)
+
+                alpha_y_2 = round(alpha_y_2,tol)
+
+                alpha_y_3 = round(alpha_y_3,tol)
+
+                if ((Xg, alpha_y_1) in filtered_interior_x_set) and (len(coords) < Max_limit):  
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_1,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_1))
+                        print("1> ",alpha_y_1,Xg,Yg,"Y++")
+
+                if ((Xg, alpha_y_2) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_2,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist): 
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_2))
+                        print("2> ",alpha_y_2,Xg,Yg,"Y++")
+
+                if((Xg, alpha_y_3) in filtered_interior_x_set) and (len(coords) < Max_limit):
+                    r = perp_dist(X0,Y0,X1,Y1,Xg,alpha_y_3,L_ref)
+                    if (r > tolerance)  and (r not in normal_dist):
+                        normal_dist.append(r)
+                        coords.append((Xg,alpha_y_3))
+                        print("3> ",alpha_y_3,Xg,Yg,"Y++")
+
+                print("id = ",i,"Edge = ",X0,Y0,X1,Y1,"GN_index = ",j,Xg,Yg)
+                print(coords)
+                print(normal_dist)
+            # if (len(coords) > 0):
+                sub_interpolation_points.append(coords)
+                sub_normal_dist.append(normal_dist)
+
+                # print("sub: ",sub_interpolation_points)
+        interpolation_points.append(sub_interpolation_points)   
+        global_normal_dist.append(sub_normal_dist)
+    else:
+        break_check = 1
+        pass
+
+    # print("Interpol: ",interpolation_points)
 
 # print(interpolation_points[0][7])
+# print(">>",global_normal_dist[0][70])
+print("*******")
+gnc = []
+for i in range (0 ,len(sorted_ghost_nodes), 1):
+    l = len(sorted_ghost_nodes[i])
+    gnc.append(l)
+
+total_number_of_ghost_nodes = np.sum(gnc)
+print("**********")
+
 
 # Building second_interface
 second_interface = set(filtered_interior_x) - set(first_interface)
@@ -714,11 +937,6 @@ print("")
 print(sorted_ghost_nodes[0])
 print(first_interface)
 
-# print(filtered_interior_x)
-
-# sorted_first_interface[0][0] = 20,2.1
-# sorted_first_interface[0][200] = 20,2.1
-# print(sorted_first_interface[0],len(sorted_first_interface[0]))
 
 
 # Unzip coordinates for plotting
@@ -726,7 +944,7 @@ x, y = zip(*unique_rounded_points)
 if (len(rounded_horizontal) !=0):
     g, h = zip(*rounded_horizontal)
 c, d = zip(*points)
-a, b = zip(*filtered_interior_x)
+a, b = zip(*interior_points_x)
 yama,lama = zip(*ghost_nodes)
 vv = sorted_ghost_nodes[0]
 eera,meera = zip(*vv)
@@ -735,19 +953,11 @@ dxc,vfc = zip(*vvc)
 miros = mirror[0]
 mxi,myi = zip(*miros)
 xe,ye = zip(*filtered_exterior_x)
-
-# xg = sorted_ghost_nodes[0][7][0]
-# yg = sorted_ghost_nodes[0][7][1]
-# xf = mirror[0][7][0]
-# yf = mirror[0][7][1]
-# ip_points = interpolation_points[0][7]
-# xipn,yipn = zip(*ip_points)
 ioj,lop = zip(*second_interface)
 
 
 # Plotting
-# plt.plot(x, y, 'r-', linewidth=2, label='Polygon Boundary')  # Red line
-plt.scatter(x, y, color='red', s=1, label='Vertices')       # Red markers
+plt.scatter(x, y, color='red', s=1, label='Actual boundaries')       # Red markers
 if (len(rounded_horizontal) !=0):
     plt.scatter(g, h, color='red', s=1)
 # plt.scatter(c, d, color ="blue", s= 5)
@@ -762,9 +972,9 @@ plt.scatter(ioj,lop, color = "#BE0095", s =5)
 
 # plt.scatter(xe,ye, s =7, color = 'blue')
 # plt.scatter(xf,yf, s =7, color =  "#AF5858")
-# plt.scatter(xipn,yipn, s =7, color = "#9200A5")
+# plt.scatter(xipn,yipn, s =7, color = "#A60008")
 
-
+# plt.scatter(x_even,y_even, color = "yellow",s=0.4)
 # Annotations and labels
 # plt.title("Polygon Visualization with Red Markers", fontsize=14)
 plt.xlabel("X-axis")
@@ -799,20 +1009,35 @@ second_interface = np.array(second_interface, dtype=object)
 path1 = r"D:/numerical computation/geometry meshing/Meshes/RAX_1.npz"
 path2 = r"D:/numerical computation/geometry meshing/Meshes/GAX_1.npz"
 
-# # # === Save .npz files ===
-np.savez(path1, array1=filtered_interior_x, del_h = del_h, nx = nx, ny = ny)
+# # # === Save .npz files === 
+np.savez(path1, array1=filtered_interior_x, del_h = del_h, nx = nx, ny = ny, total_number_of_ghost_nodes = total_number_of_ghost_nodes)
 np.savez(
     path2,
     array1=sorted_ghost_nodes,
     array2=sorted_first_interface,
-    # array3=interpolation_points,
+    array3=interpolation_points,
     array4=mirror_array,
     array5=unique_rounded_points,
     array6=rounded_horizontal,
     array7=sorted_first_interface,
     array8=second_interface,
-    array9=first_interface
+    array9=first_interface,
+    array10=mirror,
+    array11=mirror_perp_dist,
+    array12=interpolation_points,
+    array13=global_normal_dist
 )
 
+
+print("===== Perpendicular_distance ======")
+print(global_normal_dist)
+print("====mirror point===")
+print(mirror)
+print(mirror_perp_dist)
 print("✅ Geometry data saved successfully!")
-# print(sorted_ghost_nodes)
+
+# print(">>",global_normal_dist[0][70])
+print(filtered_interior_x)
+print("mc",mirror)
+print("iL: ",interpolation_points)
+print(">>>",sorted_ghost_nodes)
