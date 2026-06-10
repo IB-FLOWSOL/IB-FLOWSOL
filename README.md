@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/language-Python-blue)
 ![GPU](https://img.shields.io/badge/accelerated-GPU-green)
 ![CFD](https://img.shields.io/badge/domain-CFD-orange)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
 
 A GPU-accelerated **Computational Fluid Dynamics (CFD) framework** for solving incompressible flows using the **SMAC (Simplified Marker and Cell) scheme**, **Immersed Boundary Method (IBM)**, and **Ghost Node approach** on a **collocated Cartesian grid**.
 
